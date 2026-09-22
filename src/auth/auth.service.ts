@@ -27,18 +27,22 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
-  async register(email: string, password: string): Promise<AuthTokens> {
-    const existing = await this.users.findByEmail(email);
-    if (existing) {
+  async register(email: string, password: string, username: string): Promise<AuthTokens> {
+    const existingEmail = await this.users.findByEmail(email);
+    if (existingEmail) {
       throw new ConflictException('Email already in use');
     }
+    const existingUsername = await this.users.findByUsername(username);
+    if (existingUsername) {
+      throw new ConflictException('Username already in use');
+    }
     const passwordHash = await argon2.hash(password);
-    const user = await this.users.create(email, passwordHash);
+    const user = await this.users.create(email, username, passwordHash);
     return this.issueTokens(user.id, user.email);
   }
 
-  async login(email: string, password: string): Promise<AuthTokens> {
-    const user = await this.users.findByEmail(email);
+  async login(identifier: string, password: string): Promise<AuthTokens> {
+    const user = await this.users.findByIdentifier(identifier);
     if (!user) {
       throw new UnauthorizedException('Invalid Username or Password');
     }

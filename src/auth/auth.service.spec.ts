@@ -16,12 +16,22 @@ const CONFIG: Record<string, string> = {
 
 describe('AuthService', () => {
   let service: AuthService;
-  let users: { findByEmail: ReturnType<typeof vi.fn>; create: ReturnType<typeof vi.fn> };
+  let users: {
+    findByEmail: ReturnType<typeof vi.fn>;
+    findByUsername: ReturnType<typeof vi.fn>;
+    findByIdentifier: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+  };
   let prisma: { refreshToken: Record<string, ReturnType<typeof vi.fn>> };
   let jwt: { signAsync: ReturnType<typeof vi.fn>; decode: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    users = { findByEmail: vi.fn(), create: vi.fn() };
+    users = {
+      findByEmail: vi.fn(),
+      findByUsername: vi.fn(),
+      findByIdentifier: vi.fn(),
+      create: vi.fn(),
+    };
     prisma = {
       refreshToken: {
         create: vi.fn(),
@@ -49,17 +59,28 @@ describe('AuthService', () => {
     it('rejects an already registered email', async () => {
       users.findByEmail.mockResolvedValue({ id: 'u1', email: 'a@b.de' });
 
-      await expect(service.register('a@b.de', 'password123')).rejects.toBeInstanceOf(
-        ConflictException,
-      );
+      await expect(
+        service.register('a@b.de', 'password123', 'user1'),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(users.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects an already registered username', async () => {
+      users.findByEmail.mockResolvedValue(null);
+      users.findByUsername.mockResolvedValue({ id: 'u1', username: 'user1' });
+
+      await expect(
+        service.register('a@b.de', 'password123', 'user1'),
+      ).rejects.toBeInstanceOf(ConflictException);
       expect(users.create).not.toHaveBeenCalled();
     });
 
     it('hashes the password and issues tokens', async () => {
       users.findByEmail.mockResolvedValue(null);
+      users.findByUsername.mockResolvedValue(null);
       users.create.mockResolvedValue({ id: 'u1', email: 'a@b.de' });
 
-      const tokens = await service.register('a@b.de', 'password123');
+      const tokens = await service.register('a@b.de', 'password123', 'user1');
 
       expect(tokens).toEqual({
         accessToken: 'signed.jwt.token',
@@ -67,7 +88,7 @@ describe('AuthService', () => {
         tokenType: 'Bearer',
         expiresIn: 900,
       });
-      const [, passwordHash] = users.create.mock.calls[0];
+      const [, , passwordHash] = users.create.mock.calls[0];
       expect(passwordHash).not.toBe('password123');
       expect(await argon2.verify(passwordHash, 'password123')).toBe(true);
       expect(prisma.refreshToken.create).toHaveBeenCalledOnce();
@@ -76,7 +97,7 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('throws Unauthorized for an unknown user', async () => {
-      users.findByEmail.mockResolvedValue(null);
+      users.findByIdentifier.mockResolvedValue(null);
 
       await expect(service.login('x@y.de', 'whatever')).rejects.toBeInstanceOf(
         UnauthorizedException,
@@ -84,7 +105,7 @@ describe('AuthService', () => {
     });
 
     it('throws Unauthorized for a wrong password', async () => {
-      users.findByEmail.mockResolvedValue({
+      users.findByIdentifier.mockResolvedValue({
         id: 'u1',
         email: 'a@b.de',
         passwordHash: await argon2.hash('correct-password'),
@@ -95,16 +116,17 @@ describe('AuthService', () => {
       );
     });
 
-    it('returns tokens for valid credentials', async () => {
-      users.findByEmail.mockResolvedValue({
+    it('logs in with email or username', async () => {
+      users.findByIdentifier.mockResolvedValue({
         id: 'u1',
         email: 'a@b.de',
         passwordHash: await argon2.hash('correct-password'),
       });
 
-      const tokens = await service.login('a@b.de', 'correct-password');
+      const tokens = await service.login('user1', 'correct-password');
 
       expect(tokens.accessToken).toBe('signed.jwt.token');
+      expect(users.findByIdentifier).toHaveBeenCalledWith('user1');
       expect(prisma.refreshToken.create).toHaveBeenCalledOnce();
     });
   });
