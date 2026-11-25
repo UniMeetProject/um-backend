@@ -20,6 +20,7 @@ describe('AuthService', () => {
     findByEmail: ReturnType<typeof vi.fn>;
     findByUsername: ReturnType<typeof vi.fn>;
     findByIdentifier: ReturnType<typeof vi.fn>;
+    findById: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
   };
   let prisma: { refreshToken: Record<string, ReturnType<typeof vi.fn>> };
@@ -30,6 +31,7 @@ describe('AuthService', () => {
       findByEmail: vi.fn(),
       findByUsername: vi.fn(),
       findByIdentifier: vi.fn(),
+      findById: vi.fn(),
       create: vi.fn(),
     };
     prisma = {
@@ -53,6 +55,18 @@ describe('AuthService', () => {
       jwt as unknown as JwtService,
       config as unknown as ConfigService,
     );
+  });
+
+  describe('profile', () => {
+    it('returns only public account details', async () => {
+      users.findById.mockResolvedValue({ id: 'u1', email: 'a@b.de', username: 'user1', passwordHash: 'private' });
+      expect(await service.profile('u1')).toEqual({ id: 'u1', email: 'a@b.de', username: 'user1' });
+    });
+
+    it('rejects a deleted account', async () => {
+      users.findById.mockResolvedValue(null);
+      await expect(service.profile('deleted')).rejects.toBeInstanceOf(UnauthorizedException);
+    });
   });
 
   describe('register', () => {

@@ -27,9 +27,77 @@
 
 ## Project setup
 
-```bash
-$ npm install
+### Local UniMeet database
+
+Start Docker Desktop before running the database commands.
+
+#### Normal startup
+
+Open a PowerShell terminal and keep it running for the backend:
+
+```powershell
+cd D:\Kimi\UniMeetProjekt\um-backend
+docker compose up -d --wait db
+npx prisma migrate deploy
+npm run start:dev
 ```
+
+In a second PowerShell terminal, start the frontend:
+
+```powershell
+cd D:\Kimi\UniMeetProjekt\um-frontend\web
+npm run dev -- --port 5173
+```
+
+Open <http://localhost:5173>. PostgreSQL listens on `localhost:5432`, and the backend listens on `localhost:3000`. Wait for `Nest application successfully started` before signing in.
+
+#### First-time setup
+
+Install the backend dependencies and create `.env` if it does not exist:
+
+```powershell
+cd D:\Kimi\UniMeetProjekt\um-backend
+npm ci
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
+```
+
+Edit `.env` with matching PostgreSQL credentials in `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DATABASE_URL` and `DIRECT_URL`. Replace the JWT placeholders with two independent random secrets. Generate each secret by running:
+
+```powershell
+node -e "console.log(require('node:crypto').randomBytes(48).toString('hex'))"
+```
+
+Generate the Prisma client, then follow Normal startup:
+
+```powershell
+npx prisma generate
+```
+
+Install the frontend dependencies once:
+
+```powershell
+cd D:\Kimi\UniMeetProjekt\um-frontend\web
+npx --yes bun install --frozen-lockfile
+```
+
+#### Check or stop services
+
+Run database commands from `um-backend`:
+
+```powershell
+docker compose ps
+npx prisma migrate status
+```
+
+Stop the frontend and backend with `Ctrl+C` in their terminals. To stop PostgreSQL while retaining its data:
+
+```powershell
+docker compose stop db
+```
+
+Database data persists in the `unimeet-postgres` Docker volume. If Prisma reports `P1001` for `localhost:5432`, start Docker Desktop and rerun `docker compose up -d --wait db`. Run `npx prisma migrate deploy` after pulling new migrations. After changing Prisma's schema or updating dependencies, rerun `npx prisma generate`.
+
+The web frontend uses port 5173 by default. Configure `FRONTEND_ORIGINS` when using another frontend origin.
 
 ## Compile and run the project
 

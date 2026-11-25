@@ -89,6 +89,12 @@ export class AuthService {
     });
   }
 
+  async profile(userId: string) {
+    const user = await this.users.findById(userId);
+    if (!user) throw new UnauthorizedException('User no longer exists');
+    return { id: user.id, email: user.email, username: user.username };
+  }
+
   private async issueTokens(userId: string, email: string): Promise<AuthTokens> {
     const accessPayload: JwtPayload = { sub: userId, email };
     const accessToken = await this.jwt.signAsync(
