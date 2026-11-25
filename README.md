@@ -27,6 +27,19 @@
 
 ## Project setup
 
+### Shared database configuration
+
+With the supplied shared `.env` configured, start the backend directly:
+
+```powershell
+cd D:\Kimi\UniMeetProjekt\um-backend
+npm run start:dev
+```
+
+The shared configuration uses an external PostgreSQL database. Docker is needed only for the local database option below. `DIRECT_URL` currently uses the same supplied database URL because no separate direct connection URL was provided. Obtain the provider's direct connection URL before planning schema migrations through a connection pooler.
+
+The previous local configuration is backed up in the Git-ignored `.tmp/env-backups` directory. Keep `.env` and that backup private. Database and JWT secrets belong in the backend environment file.
+
 ### Local UniMeet database
 
 Start Docker Desktop before running the database commands.
@@ -98,6 +111,19 @@ docker compose stop db
 Database data persists in the `unimeet-postgres` Docker volume. If Prisma reports `P1001` for `localhost:5432`, start Docker Desktop and rerun `docker compose up -d --wait db`. Run `npx prisma migrate deploy` after pulling new migrations. After changing Prisma's schema or updating dependencies, rerun `npx prisma generate`.
 
 The web frontend uses port 5173 by default. Configure `FRONTEND_ORIGINS` when using another frontend origin.
+
+#### Repair an incomplete Nest CLI installation
+
+If startup reports `ERR_MODULE_NOT_FOUND` for `node_modules/@nestjs/cli/commands/index.js`, stop the running backend and its watch process with `Ctrl+C` before reinstalling. A running Prisma engine can otherwise cause an `EPERM` error on Windows.
+
+```powershell
+cd D:\Kimi\UniMeetProjekt\um-backend
+npm ci --include=dev
+npx prisma generate
+npm run start:dev
+```
+
+The local Nest CLI is a development dependency and is installed by `--include=dev`. Some locked build dependencies require Node.js 22.22.3 or newer within Node 22, or Node.js 24.15.0 or newer within Node 24.
 
 ## Compile and run the project
 
