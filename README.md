@@ -38,6 +38,8 @@ npm run start:dev
 
 The shared configuration uses an external PostgreSQL database. Docker is needed only for the local database option below. `DIRECT_URL` currently uses the same supplied database URL because no separate direct connection URL was provided. Obtain the provider's direct connection URL before planning schema migrations through a connection pooler.
 
+If Prisma reports `P2022` for `User.username`, the active database is missing the `20261125083000_add_username` migration. That migration adds a required unique username and assigns existing accounts distinct names such as `user_1`; email login remains available. Coordinate the migration with the shared database owner before applying it.
+
 The previous local configuration is backed up in the Git-ignored `.tmp/env-backups` directory. Keep `.env` and that backup private. Database and JWT secrets belong in the backend environment file.
 
 ### Local UniMeet database
