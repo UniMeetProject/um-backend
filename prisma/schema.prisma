@@ -16,7 +16,14 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  refreshTokens RefreshToken[]
+  refreshTokens       RefreshToken[]
+  ownedGroups         Group[]           @relation("GroupOwner")
+  memberships         GroupMembership[]
+  invitationsReceived GroupInvitation[] @relation("InvitedUser")
+  invitationsSent     GroupInvitation[] @relation("InvitedBy")
+  appointments        Appointment[]     @relation("AppointmentCreator")
+  proposals           Proposal[]        @relation("ProposalAuthor")
+  votes               Vote[]
 }
 
 model RefreshToken {
@@ -28,5 +35,114 @@ model RefreshToken {
   revokedAt DateTime?
   createdAt DateTime  @default(now())
 
+  @@index([userId])
+}
+
+model Group {
+  id        String   @id @default(uuid())
+  name      String
+  ownerId   String
+  owner     User     @relation("GroupOwner", fields: [ownerId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships  GroupMembership[]
+  invitations  GroupInvitation[]
+  appointments Appointment[]
+
+  @@index([ownerId])
+}
+
+enum GroupRole {
+  OWNER
+  MEMBER
+}
+
+model GroupMembership {
+  id       String    @id @default(uuid())
+  groupId  String
+  group    Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     GroupRole @default(MEMBER)
+  joinedAt DateTime  @default(now())
+
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+model GroupInvitation {
+  id            String           @id @default(uuid())
+  groupId       String
+  group         Group            @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  invitedUserId String
+  invitedUser   User             @relation("InvitedUser", fields: [invitedUserId], references: [id], onDelete: Cascade)
+  invitedById   String
+  invitedBy     User             @relation("InvitedBy", fields: [invitedById], references: [id])
+  status        InvitationStatus @default(PENDING)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@unique([groupId, invitedUserId])
+  @@index([invitedUserId])
+}
+
+enum AppointmentStatus {
+  OPEN
+  FINALIZED
+  CANCELLED
+}
+
+model Appointment {
+  id              String            @id @default(uuid())
+  groupId         String
+  group           Group             @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdById     String
+  createdBy       User              @relation("AppointmentCreator", fields: [createdById], references: [id])
+  title           String
+  description     String?
+  votingDeadline  DateTime
+  status          AppointmentStatus @default(OPEN)
+  finalProposalId String?           @unique
+  finalProposal   Proposal?         @relation("FinalProposal", fields: [finalProposalId], references: [id])
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  proposals Proposal[] @relation("AppointmentProposals")
+
+  @@index([groupId])
+}
+
+model Proposal {
+  id            String       @id @default(uuid())
+  appointmentId String
+  appointment   Appointment  @relation("AppointmentProposals", fields: [appointmentId], references: [id], onDelete: Cascade)
+  proposedById  String
+  proposedBy    User         @relation("ProposalAuthor", fields: [proposedById], references: [id])
+  startsAt      DateTime
+  endsAt        DateTime?
+  createdAt     DateTime     @default(now())
+  finalizedFor  Appointment? @relation("FinalProposal")
+
+  votes Vote[]
+
+  @@index([appointmentId])
+}
+
+model Vote {
+  id         String   @id @default(uuid())
+  proposalId String
+  proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([proposalId, userId])
   @@index([userId])
 }
