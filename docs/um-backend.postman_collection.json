@@ -1,0 +1,798 @@
+{
+  "info": {
+    "_postman_id": "15ff30a5-f5d5-465c-86e3-a77f3a7ce945",
+    "name": "um-backend API",
+    "description": "Terminfindungs-Backend (NestJS). Auth per Bearer-JWT.\n\nSetup: baseUrl pruefen (Default http://localhost:3000), dann Auth > Register oder Login ausfuehren - accessToken/refreshToken werden automatisch gespeichert. Alle anderen Requests nutzen {{accessToken}} automatisch. IDs (groupId, appointmentId, proposalId, invitationId) werden aus Antworten automatisch gesetzt; fuer \"Remove member\" memberUserId manuell setzen.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "groupId",
+      "value": ""
+    },
+    {
+      "key": "appointmentId",
+      "value": ""
+    },
+    {
+      "key": "proposalId",
+      "value": ""
+    },
+    {
+      "key": "invitationId",
+      "value": ""
+    },
+    {
+      "key": "memberUserId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Neuen Benutzer anlegen (oeffentlich). Speichert accessToken & refreshToken. 201.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@example.com\",\n  \"username\": \"alice\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.accessToken) pm.collectionVariables.set(\"accessToken\", json.accessToken);",
+                  "if (json.refreshToken) pm.collectionVariables.set(\"refreshToken\", json.refreshToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login mit Username ODER E-Mail im Feld \"identifier\" (oeffentlich). Speichert Tokens. 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"alice\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.accessToken) pm.collectionVariables.set(\"accessToken\", json.accessToken);",
+                  "if (json.refreshToken) pm.collectionVariables.set(\"refreshToken\", json.refreshToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Neues Token-Paar. Nutzt das Refresh-Token im Bearer-Header. Rotiert (altes Refresh-Token wird ungueltig). Speichert neue Tokens. 200.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{refreshToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.accessToken) pm.collectionVariables.set(\"accessToken\", json.accessToken);",
+                  "if (json.refreshToken) pm.collectionVariables.set(\"refreshToken\", json.refreshToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Aktueller Benutzer (id, email). Access-Token noetig."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Widerruft alle Refresh-Tokens des Benutzers. 204."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Groups",
+      "item": [
+        {
+          "name": "Create group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/groups",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "groups"
+              ]
+            },
+            "description": "Gruppe erstellen; Ersteller wird Owner. memberIdentifiers (optional) = Usernamen/E-Mails, die eingeladen werden (Status PENDING). Speichert groupId. 201.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Mein Team\",\n  \"memberIdentifiers\": [\n    \"bob\",\n    \"carol@example.com\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.id) pm.collectionVariables.set(\"groupId\", json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "My groups",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/groups",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "groups"
+              ]
+            },
+            "description": "Alle Gruppen, in denen ich Mitglied bin (mit Zaehlern)."
+          },
+          "response": []
+        },
+        {
+          "name": "Group details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/groups/{{groupId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "groups",
+                "{{groupId}}"
+              ]
+            },
+            "description": "Details inkl. Mitglieder und offener Einladungen. Nur fuer Mitglieder."
+          },
+          "response": []
+        },
+        {
+          "name": "Invite to group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/groups/{{groupId}}/invitations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "groups",
+                "{{groupId}}",
+                "invitations"
+              ]
+            },
+            "description": "Personen einladen (Usernamen/E-Mails). Nur Owner. Bereits-Mitglieder werden uebersprungen.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifiers\": [\n    \"dave\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove member",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/groups/{{groupId}}/members/{{memberUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "groups",
+                "{{groupId}}",
+                "members",
+                "{{memberUserId}}"
+              ]
+            },
+            "description": "Mitglied entfernen. Nur Owner (Owner kann nicht entfernt werden). memberUserId vorher setzen. 204."
+          },
+          "response": []
+        },
+        {
+          "name": "Leave group",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/groups/{{groupId}}/leave",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "groups",
+                "{{groupId}}",
+                "leave"
+              ]
+            },
+            "description": "Gruppe verlassen. Owner kann nicht verlassen (stattdessen loeschen). 204."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete group",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/groups/{{groupId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "groups",
+                "{{groupId}}"
+              ]
+            },
+            "description": "Gruppe loeschen. Nur Owner. 204."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Invitations",
+      "item": [
+        {
+          "name": "My invitations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/invitations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "invitations"
+              ]
+            },
+            "description": "Meine offenen Einladungen (PENDING). Speichert invitationId (erste)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (Array.isArray(json) && json.length) pm.collectionVariables.set(\"invitationId\", json[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Accept invitation",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/invitations/{{invitationId}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "invitations",
+                "{{invitationId}}",
+                "accept"
+              ]
+            },
+            "description": "Einladung annehmen -> wird Mitglied. 200."
+          },
+          "response": []
+        },
+        {
+          "name": "Decline invitation",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/invitations/{{invitationId}}/decline",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "invitations",
+                "{{invitationId}}",
+                "decline"
+              ]
+            },
+            "description": "Einladung ablehnen. 200."
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke invitation",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/invitations/{{invitationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "invitations",
+                "{{invitationId}}"
+              ]
+            },
+            "description": "Offene Einladung zurueckziehen. Nur Owner der Gruppe. 204."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Appointments",
+      "item": [
+        {
+          "name": "Create appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/groups/{{groupId}}/appointments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "groups",
+                "{{groupId}}",
+                "appointments"
+              ]
+            },
+            "description": "Termin in der Gruppe erstellen. votingDeadline (ISO, in der Zukunft) ist Pflicht. proposals optional (startsAt Pflicht, endsAt optional). Jedes Mitglied. Speichert appointmentId & proposalId. 201.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Team-Meeting\",\n  \"description\": \"Monatsabstimmung\",\n  \"votingDeadline\": \"2026-12-31T18:00:00.000Z\",\n  \"proposals\": [\n    {\n      \"startsAt\": \"2026-12-20T18:00:00.000Z\",\n      \"endsAt\": \"2026-12-20T20:00:00.000Z\"\n    },\n    {\n      \"startsAt\": \"2026-12-21T18:00:00.000Z\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.id) pm.collectionVariables.set(\"appointmentId\", json.id);",
+                  "if (json && json.proposals && json.proposals.length) pm.collectionVariables.set(\"proposalId\", json.proposals[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List appointments (group)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/groups/{{groupId}}/appointments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "groups",
+                "{{groupId}}",
+                "appointments"
+              ]
+            },
+            "description": "Alle Termine der Gruppe."
+          },
+          "response": []
+        },
+        {
+          "name": "Appointment details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{appointmentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "appointments",
+                "{{appointmentId}}"
+              ]
+            },
+            "description": "Termindetails inkl. Vorschlaege und Stimmenzahl. Speichert proposalId (erster)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.proposals && json.proposals.length) pm.collectionVariables.set(\"proposalId\", json.proposals[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Appointment status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{appointmentId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "appointments",
+                "{{appointmentId}}",
+                "status"
+              ]
+            },
+            "description": "Status: verbleibende Zeit (remainingMs/remainingSeconds), votingClosed, pro Vorschlag voteCount + voters (wer), votedByMe, finalProposalId."
+          },
+          "response": []
+        },
+        {
+          "name": "Add proposal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{appointmentId}}/proposals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "appointments",
+                "{{appointmentId}}",
+                "proposals"
+              ]
+            },
+            "description": "Terminvorschlag hinzufuegen. Nur solange OPEN und vor der Deadline. Speichert proposalId. 201.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startsAt\": \"2026-12-22T18:00:00.000Z\",\n  \"endsAt\": \"2026-12-22T19:30:00.000Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.id) pm.collectionVariables.set(\"proposalId\", json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vote for proposal",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{appointmentId}}/proposals/{{proposalId}}/votes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "appointments",
+                "{{appointmentId}}",
+                "proposals",
+                "{{proposalId}}",
+                "votes"
+              ]
+            },
+            "description": "Fuer einen Vorschlag stimmen (\"passt mir\"); mehrere Vorschlaege moeglich. Gibt den aktuellen Status zurueck. 200."
+          },
+          "response": []
+        },
+        {
+          "name": "Remove my vote",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{appointmentId}}/proposals/{{proposalId}}/votes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "appointments",
+                "{{appointmentId}}",
+                "proposals",
+                "{{proposalId}}",
+                "votes"
+              ]
+            },
+            "description": "Eigene Stimme fuer den Vorschlag zurueckziehen. 204."
+          },
+          "response": []
+        },
+        {
+          "name": "Remove proposal",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{appointmentId}}/proposals/{{proposalId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "appointments",
+                "{{appointmentId}}",
+                "proposals",
+                "{{proposalId}}"
+              ]
+            },
+            "description": "Vorschlag entfernen. Erlaubt fuer Autor, Owner oder Termin-Ersteller. Nur solange OPEN und vor der Deadline. 204."
+          },
+          "response": []
+        },
+        {
+          "name": "Finalize appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{appointmentId}}/finalize",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "appointments",
+                "{{appointmentId}}",
+                "finalize"
+              ]
+            },
+            "description": "Gewinner-Vorschlag verbindlich festlegen; Status wird FINALIZED. Nur Owner oder Termin-Ersteller. 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"proposalId\": \"{{proposalId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete appointment",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{appointmentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "appointments",
+                "{{appointmentId}}"
+              ]
+            },
+            "description": "Termin absagen/loeschen. Nur Owner oder Termin-Ersteller. 204."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
